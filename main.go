@@ -27,37 +27,7 @@ var FS embed.FS
 func main() {
 	//设置并启动gin服务器
 	go func() {
-
-		port := "27149"
-		gin.SetMode(gin.DebugMode)
-		router := gin.Default()
-
-		staticFiles, _ := fs.Sub(FS, "frontend/dist")
-		router.POST("/api/v1/files", FilesController)
-		router.GET("/api/v1/qrcodes", QrcodesController)
-		router.StaticFS("/static", http.FS(staticFiles))
-		router.GET("/uploads/:path", UploadsController)
-		router.POST("api/v1/texts", TextsController)
-		router.GET("api/v1/addresses", AddressesController)
-		router.NoRoute(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			if strings.HasPrefix(path, "/static/") {
-				reader, err := staticFiles.Open("index.html")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer reader.Close()
-				stat, err := reader.Stat()
-				if err != nil {
-					log.Fatal(err)
-				}
-				c.DataFromReader(http.StatusOK, stat.Size(), "text/html", reader, nil)
-			} else {
-				c.Status(http.StatusNotFound)
-			}
-		})
-
-		router.Run(":" + port)
+		Start_gin()
 	}()
 
 	chSignal := make(chan os.Signal, 1)
@@ -197,4 +167,37 @@ func FilesController(c *gin.Context) {
 	log.Printf("url" + "/" + fullpath)
 	c.JSON(http.StatusOK, gin.H{"url": "/" + fullpath}) //保存好后会返回ok的状态码以及地址
 
+}
+
+func Start_gin() {
+	port := "27149"
+	gin.SetMode(gin.DebugMode)
+	router := gin.Default()
+
+	staticFiles, _ := fs.Sub(FS, "frontend/dist")
+	router.POST("/api/v1/files", FilesController)
+	router.GET("/api/v1/qrcodes", QrcodesController)
+	router.StaticFS("/static", http.FS(staticFiles))
+	router.GET("/uploads/:path", UploadsController)
+	router.POST("api/v1/texts", TextsController)
+	router.GET("api/v1/addresses", AddressesController)
+	router.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/static/") {
+			reader, err := staticFiles.Open("index.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer reader.Close()
+			stat, err := reader.Stat()
+			if err != nil {
+				log.Fatal(err)
+			}
+			c.DataFromReader(http.StatusOK, stat.Size(), "text/html", reader, nil)
+		} else {
+			c.Status(http.StatusNotFound)
+		}
+	})
+
+	router.Run(":" + port)
 }
