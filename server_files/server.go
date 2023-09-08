@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/wode-czw/tran_tools_czw/config"
+	"github.com/wode-czw/tran_tools_czw/server_files/ws"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +17,9 @@ import (
 var FS embed.FS
 
 func Start_gin() {
-	port := "27149"
+	hub := ws.NewHub()
+	go hub.Run()
+
 	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
 
@@ -25,6 +30,9 @@ func Start_gin() {
 	router.GET("/uploads/:path", UploadsController)
 	router.POST("api/v1/texts", TextsController)
 	router.GET("api/v1/addresses", AddressesController)
+	router.GET("/ws", func(c *gin.Context) {
+		ws.HttpController(c, hub)
+	})
 	router.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 		if strings.HasPrefix(path, "/static/") {
@@ -43,5 +51,5 @@ func Start_gin() {
 		}
 	})
 
-	router.Run(":" + port)
+	router.Run(":" + config.Get_Port())
 }
